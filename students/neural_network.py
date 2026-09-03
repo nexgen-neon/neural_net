@@ -1,4 +1,5 @@
 import math
+import json
 
 class StudentsNet:
 
@@ -198,3 +199,51 @@ class StudentsNet:
         grade_output,
         grade
         )
+
+    def save(self, filename):
+
+        model = {
+            "learning_rate": self.learning_rate,
+
+            "w1": self.w1,
+            "w2": self.w2,
+            "w3": self.w3,
+            "w4": self.w4,
+
+            "b1": self.b1,
+            "b2": self.b2,
+
+            "w5": self.w5,
+            "w6": self.w6,
+            "b3": self.b3,
+
+            "w7": self.w7,
+            "w8": self.w8,
+            "b4": self.b4
+        }
+
+        with open(filename, "w") as file:
+            json.dump(model, file, indent=4)
+
+    def load(self, filename):
+
+        with open(filename, "r") as file:
+            model = json.load(file)
+
+        self.learning_rate = model["learning_rate"]
+
+        self.w1 = model["w1"]
+        self.w2 = model["w2"]
+        self.w3 = model["w3"]
+        self.w4 = model["w4"]
+
+        self.b1 = model["b1"]
+        self.b2 = model["b2"]
+
+        self.w5 = model["w5"]
+        self.w6 = model["w6"]
+        self.b3 = model["b3"]
+
+        self.w7 = model["w7"]
+        self.w8 = model["w8"]
+        self.b4 = model["b4"]
