@@ -1,59 +1,54 @@
-def squared_error(predicted, expected):
+def mean_squared_error(predictions, expected_values):
     """
-    Calculate squared error for one prediction.
+    Calculate the mean squared error (MSE).
 
-    Formula:
-
-        Loss = (predicted - expected)^2
+    MSE = average of (prediction - expected)^2
     """
 
-    return (predicted - expected) ** 2
+    if len(predictions) != len(expected_values):
+        raise ValueError(
+            "Predictions and expected values must have the same length."
+        )
 
-
-def mean_squared_error(predictions, expected):
-    """
-    Calculate Mean Squared Error.
-
-    Formula:
-
-        MSE = sum((prediction - expected)^2) / n
-    """
-
-    if not predictions:
+    if len(predictions) == 0:
         return 0.0
 
     total_loss = 0.0
 
-    for predicted, target in zip(
+    for prediction, expected in zip(
         predictions,
-        expected,
+        expected_values,
     ):
-        total_loss += squared_error(
-            predicted,
-            target,
-        )
+        total_loss += (
+            prediction - expected
+        ) ** 2
 
     return total_loss / len(predictions)
 
 
-def calculate_sample_losses(predictions, expected):
+def calculate_sample_losses(
+    predictions,
+    expected_values,
+):
     """
-    Calculate the loss for each individual sample.
+    Calculate the individual squared loss
+    for every sample.
+    """
 
-    Returns a list containing one loss value
-    for each prediction.
-    """
+    if len(predictions) != len(expected_values):
+        raise ValueError(
+            "Predictions and expected values must have the same length."
+        )
 
     losses = []
 
-    for predicted, target in zip(
+    for prediction, expected in zip(
         predictions,
-        expected,
+        expected_values,
     ):
-        loss = squared_error(
-            predicted,
-            target,
-        )
+        loss = (
+            prediction - expected
+        ) ** 2
 
         losses.append(loss)
 

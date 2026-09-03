@@ -43,8 +43,8 @@ st.write(
 )
 
 st.info(
-    "No PyTorch, NumPy, TensorFlow, "
-    "or scikit-learn is used."
+    "The current implementation is built from scratch. "
+    "PyTorch support is reserved for a future version."
 )
 
 
@@ -54,6 +54,24 @@ st.info(
 
 st.sidebar.header("Training Settings")
 
+
+# ------------------------------------------------------------
+# Neural Network Implementation
+# ------------------------------------------------------------
+
+implementation = st.sidebar.selectbox(
+    "Neural Network Implementation",
+    [
+        "From Scratch",
+        "PyTorch",
+    ],
+)
+
+
+# ------------------------------------------------------------
+# Epochs
+# ------------------------------------------------------------
+
 epochs = st.sidebar.number_input(
     "Number of Epochs",
     min_value=1,
@@ -62,6 +80,11 @@ epochs = st.sidebar.number_input(
     step=1000,
 )
 
+
+# ------------------------------------------------------------
+# Learning Rate
+# ------------------------------------------------------------
+
 learning_rate = st.sidebar.number_input(
     "Learning Rate",
     min_value=0.001,
@@ -69,6 +92,24 @@ learning_rate = st.sidebar.number_input(
     value=0.5,
     step=0.1,
 )
+
+
+# ============================================================
+# Display Implementation Information
+# ============================================================
+
+if implementation == "From Scratch":
+
+    st.sidebar.success(
+        "Using the from-scratch neural network."
+    )
+
+else:
+
+    st.sidebar.info(
+        "PyTorch implementation will be added "
+        "in a future version."
+    )
 
 
 # ============================================================
@@ -81,6 +122,7 @@ st.write(
     "Modify the expected outputs below and train "
     "the neural network."
 )
+
 
 edited_table = st.data_editor(
     DEFAULT_XOR_TABLE,
@@ -114,10 +156,13 @@ edited_table = st.data_editor(
 # ============================================================
 
 if hasattr(edited_table, "to_dict"):
-    # Handles DataFrame-like results
-    rows = edited_table.to_dict("records")
+
+    rows = edited_table.to_dict(
+        "records"
+    )
+
 else:
-    # Handles list-like results
+
     rows = edited_table
 
 
@@ -135,7 +180,10 @@ rows = [
 # Validate Truth Table
 # ============================================================
 
-valid, message = validate_truth_table(rows)
+valid, message = validate_truth_table(
+    rows
+)
+
 
 if valid:
 
@@ -165,6 +213,7 @@ else:
 
 st.header("2. Train Neural Network")
 
+
 train_button = st.button(
     "🚀 Train Network",
     type="primary",
@@ -173,47 +222,86 @@ train_button = st.button(
 
 if train_button:
 
+    # --------------------------------------------------------
+    # Validate truth table
+    # --------------------------------------------------------
+
     if not valid:
 
         st.error(
             "Please correct the truth table before training."
         )
 
-    else:
+        st.stop()
 
-        trainer = XORTrainer(
-            learning_rate=learning_rate,
-            epochs=epochs,
+
+    # --------------------------------------------------------
+    # PyTorch placeholder
+    # --------------------------------------------------------
+
+    if implementation == "PyTorch":
+
+        st.warning(
+            "⚠️ PyTorch support is not implemented yet."
         )
 
-        with st.spinner(
-            "Training neural network..."
-        ):
-
-            network, loss_history = trainer.train(
-                rows
-            )
-
-        # Store trained model and results
-        # inside Streamlit session state.
-
-        st.session_state.network = network
-
-        st.session_state.loss_history = (
-            loss_history
+        st.info(
+            "The Streamlit interface is already prepared "
+            "for a future PyTorch implementation."
         )
 
-        st.session_state.rows = rows
+        st.stop()
 
-        st.session_state.epochs = epochs
 
-        st.session_state.learning_rate = (
-            learning_rate
+    # ========================================================
+    # From-Scratch Implementation
+    # ========================================================
+
+    trainer = XORTrainer(
+        learning_rate=learning_rate,
+        epochs=epochs,
+    )
+
+
+    # --------------------------------------------------------
+    # Train Network
+    # --------------------------------------------------------
+
+    with st.spinner(
+        "Training neural network..."
+    ):
+
+        network, loss_history = trainer.train(
+            rows
         )
 
-        st.success(
-            "✅ Training completed successfully!"
-        )
+
+    # --------------------------------------------------------
+    # Store Results in Session State
+    # --------------------------------------------------------
+
+    st.session_state.network = network
+
+    st.session_state.loss_history = (
+        loss_history
+    )
+
+    st.session_state.rows = rows
+
+    st.session_state.epochs = epochs
+
+    st.session_state.learning_rate = (
+        learning_rate
+    )
+
+    st.session_state.implementation = (
+        implementation
+    )
+
+
+    st.success(
+        "✅ Training completed successfully!"
+    )
 
 
 # ============================================================
@@ -235,20 +323,26 @@ if "network" in st.session_state:
     # Predictions
     # ========================================================
 
-    st.header("3. Expected vs Predicted Output")
+    st.header(
+        "3. Expected vs Predicted Output"
+    )
+
 
     predictions = []
 
     expected_values = []
 
+
     for row in rows:
 
-        prediction = network.predict(
+        prediction = network.prediction(
             row["x1"],
             row["x2"],
         )
 
-        predictions.append(prediction)
+        predictions.append(
+            prediction
+        )
 
         expected_values.append(
             row["expected"]
@@ -256,7 +350,7 @@ if "network" in st.session_state:
 
 
     # ========================================================
-    # Calculate Individual Losses
+    # Individual Losses
     # ========================================================
 
     losses = calculate_sample_losses(
@@ -266,7 +360,7 @@ if "network" in st.session_state:
 
 
     # ========================================================
-    # Calculate Overall MSE
+    # Overall MSE
     # ========================================================
 
     overall_loss = mean_squared_error(
@@ -281,6 +375,7 @@ if "network" in st.session_state:
 
     result_rows = []
 
+
     for row, prediction, loss in zip(
         rows,
         predictions,
@@ -291,6 +386,7 @@ if "network" in st.session_state:
             1 if prediction >= 0.5 else 0
         )
 
+
         result_rows.append(
             {
                 "X1": row["x1"],
@@ -300,13 +396,16 @@ if "network" in st.session_state:
                     prediction,
                     6,
                 ),
-                "Predicted Class": predicted_class,
+                "Predicted Class": (
+                    predicted_class
+                ),
                 "Loss": round(
                     loss,
                     6,
                 ),
             }
         )
+
 
     st.dataframe(
         result_rows,
@@ -318,9 +417,13 @@ if "network" in st.session_state:
     # Loss Calculator
     # ========================================================
 
-    st.header("4. Loss Calculator")
+    st.header(
+        "4. Loss Calculator"
+    )
+
 
     col1, col2 = st.columns(2)
+
 
     with col1:
 
@@ -328,6 +431,7 @@ if "network" in st.session_state:
             "Overall MSE",
             f"{overall_loss:.8f}",
         )
+
 
     with col2:
 
@@ -337,16 +441,23 @@ if "network" in st.session_state:
         )
 
 
-    st.subheader("Loss for Each Input")
+    st.subheader(
+        "Loss for Each Input"
+    )
 
-    for index, loss in enumerate(losses):
+
+    for index, loss in enumerate(
+        losses
+    ):
 
         row = rows[index]
+
 
         st.write(
             f"Input ({row['x1']}, {row['x2']}) "
             f"→ Expected = {row['expected']} "
-            f"→ Prediction = {predictions[index]:.6f} "
+            f"→ Prediction = "
+            f"{predictions[index]:.6f} "
             f"→ Loss = {loss:.8f}"
         )
 
@@ -355,7 +466,10 @@ if "network" in st.session_state:
     # Training Loss Graph
     # ========================================================
 
-    st.header("5. Training Loss")
+    st.header(
+        "5. Training Loss"
+    )
+
 
     st.line_chart(
         loss_history
@@ -366,12 +480,16 @@ if "network" in st.session_state:
     # Expected vs Predicted Graph
     # ========================================================
 
-    st.header("6. Expected vs Predicted")
+    st.header(
+        "6. Expected vs Predicted"
+    )
+
 
     chart_data = {
         "Expected": expected_values,
         "Prediction": predictions,
     }
+
 
     st.bar_chart(
         chart_data
@@ -382,9 +500,13 @@ if "network" in st.session_state:
     # Learned Parameters
     # ========================================================
 
-    st.header("7. Learned Weights and Biases")
+    st.header(
+        "7. Learned Weights and Biases"
+    )
 
-    parameters = network.get_parameters()
+
+    parameters = network.parameters()
+
 
     st.json(
         parameters
@@ -395,7 +517,10 @@ if "network" in st.session_state:
     # JSON Download
     # ========================================================
 
-    st.header("8. Download Results")
+    st.header(
+        "8. Download Results"
+    )
+
 
     json_data = create_result_json(
         truth_table=rows,
@@ -407,9 +532,12 @@ if "network" in st.session_state:
         learning_rate=st.session_state.learning_rate,
     )
 
+
     st.download_button(
         label="⬇️ Download Results as JSON",
         data=json_data,
-        file_name="xor_neural_network_results.json",
+        file_name=(
+            "xor_neural_network_results.json"
+        ),
         mime="application/json",
     )

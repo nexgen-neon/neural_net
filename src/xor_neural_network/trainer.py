@@ -13,14 +13,6 @@ class XORTrainer:
         self.epochs = epochs
 
     def train(self, rows):
-        """
-        Train the neural network.
-
-        Returns:
-
-            network
-            loss_history
-        """
 
         network = XORNeuralNetwork(
             learning_rate=self.learning_rate,
@@ -32,7 +24,6 @@ class XORTrainer:
         for epoch in range(self.epochs):
 
             predictions = []
-
             expected_values = []
 
             for row in rows:
@@ -41,25 +32,33 @@ class XORTrainer:
                 x2 = row["x2"]
                 expected = row["expected"]
 
-                network.train_one(
+      
+                network.train(
                     x1,
                     x2,
                     expected,
                 )
 
-                prediction = network.predict(
+                prediction = network.prediction(
                     x1,
                     x2,
                 )
 
-                predictions.append(prediction)
-                expected_values.append(expected)
+                predictions.append(
+                    prediction
+                )
+
+                expected_values.append(
+                    expected
+                )
 
             epoch_loss = mean_squared_error(
                 predictions,
                 expected_values,
             )
 
-            loss_history.append(epoch_loss)
+            loss_history.append(
+                epoch_loss
+            )
 
         return network, loss_history

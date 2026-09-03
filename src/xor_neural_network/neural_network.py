@@ -1,113 +1,77 @@
-import math
 import random
+import math
 
 
 class XORNeuralNetwork:
-    """
-    Neural network architecture:
 
-        Input Layer     Hidden Layer     Output Layer
+    def __init__(
+        self,
+        learning_rate=0.5,
+        seed=42,
+    ):
 
-            x1 ────────┐
-                       ├── h1 ──────┐
-            x2 ────────┘            │
-                                    ├── output
-            x1 ────────┐            │
-                       ├── h2 ──────┘
-            x2 ────────┘
-
-    Architecture: 2 -> 2 -> 1
-    Activation: Sigmoid
-    """
-
-    def __init__(self, learning_rate=0.5, seed=42):
         self.learning_rate = learning_rate
 
-        # Fixed seed makes training reproducible.
         random.seed(seed)
 
-        # Input -> Hidden weights
+        # Input -> Hidden 1
         self.w1 = random.uniform(-1, 1)
         self.w2 = random.uniform(-1, 1)
+
+        # Input -> Hidden 2
         self.w3 = random.uniform(-1, 1)
         self.w4 = random.uniform(-1, 1)
 
-        # Hidden -> Output weights
+        # Hidden -> Output
         self.w5 = random.uniform(-1, 1)
         self.w6 = random.uniform(-1, 1)
 
         # Biases
-        self.b1 = random.uniform(-1, 1)
-        self.b2 = random.uniform(-1, 1)
-        self.b3 = random.uniform(-1, 1)
+        self.bias1 = random.uniform(-1, 1)
+        self.bias2 = random.uniform(-1, 1)
+        self.bias3 = random.uniform(-1, 1)
 
     @staticmethod
-    def sigmoid(x):
-        """
-        Sigmoid activation function:
+    def sigmoid(value):
 
-            sigmoid(x) = 1 / (1 + e^(-x))
-        """
-
-        if x < -700:
+        if value < -700:
             return 0.0
 
-        if x > 700:
+        if value > 700:
             return 1.0
 
-        return 1 / (1 + math.exp(-x))
+        return 1.0 / (1.0 + math.exp(-value))
 
     @staticmethod
-    def sigmoid_derivative(output):
-        """
-        Derivative of sigmoid:
+    def sigmoid_derive(value):
 
-            sigmoid'(x) = sigmoid(x) * (1 - sigmoid(x))
-
-        Since 'output' is already sigmoid(x):
-
-            sigmoid'(x) = output * (1 - output)
-        """
-
-        return output * (1 - output)
+        return value * (1.0 - value)
 
     def forward(self, x1, x2):
-        """
-        Perform forward propagation.
-        """
 
-        # -----------------------------
         # Hidden neuron 1
-        # -----------------------------
-
         z1 = (
             x1 * self.w1
             + x2 * self.w2
-            + self.b1
+            + self.bias1
         )
 
         h1 = self.sigmoid(z1)
 
-        # -----------------------------
         # Hidden neuron 2
-        # -----------------------------
-
         z2 = (
             x1 * self.w3
             + x2 * self.w4
-            + self.b2
+            + self.bias2
         )
 
         h2 = self.sigmoid(z2)
 
-        # -----------------------------
         # Output neuron
-        # -----------------------------
-
         z3 = (
             h1 * self.w5
             + h2 * self.w6
-            + self.b3
+            + self.bias3
         )
 
         output = self.sigmoid(z3)
@@ -115,97 +79,100 @@ class XORNeuralNetwork:
         return {
             "z1": z1,
             "z2": z2,
+            "z3": z3,
             "h1": h1,
             "h2": h2,
-            "z3": z3,
             "output": output,
         }
 
-    def predict(self, x1, x2):
-        """
-        Return the network prediction.
-        """
+    def prediction(self, x1, x2):
 
-        result = self.forward(x1, x2)
+        result = self.forward(
+            x1,
+            x2,
+        )
 
         return result["output"]
 
-    def train_one(self, x1, x2, target):
-        """
-        Train the network using one training example.
+    def train(
+        self,
+        x1,
+        x2,
+        target,
+    ):
 
-        Steps:
+       
+        # Forward pass
 
-        1. Forward propagation
-        2. Calculate error
-        3. Backpropagation
-        4. Update weights and biases
-        """
-
-        # ==========================================
-        # 1. FORWARD PROPAGATION
-        # ==========================================
-
-        result = self.forward(x1, x2)
+        result = self.forward(
+            x1,
+            x2,
+        )
 
         h1 = result["h1"]
         h2 = result["h2"]
-
         output = result["output"]
 
-        # ==========================================
-        # 2. CALCULATE LOSS
-        # ==========================================
-
+      
+        # Loss
+       
         error = output - target
 
         loss = error ** 2
 
-        # ==========================================
-        # 3. BACKPROPAGATION
-        # ==========================================
-
         # dL/d(output)
-        d_loss_output = 2 * (output - target)
-
-        # d(output)/d(z3)
-        d_output_z3 = self.sigmoid_derivative(output)
-
-        # dL/d(z3)
-        delta_output = (
-            d_loss_output
-            * d_output_z3
+        loss_grad = 2 * (
+            output - target
         )
 
-        # ------------------------------------------
-        # Output layer gradients
-        # ------------------------------------------
+     
+        # Output layer
 
+        d_z3 = self.sigmoid_derive(
+            output
+        )
+
+        delta_output = (
+            loss_grad * d_z3
+        )
+
+        # Gradients for w5 and w6
         dw5 = delta_output * h1
         dw6 = delta_output * h2
 
         db3 = delta_output
 
-        # ------------------------------------------
-        # Hidden layer gradients
-        # ------------------------------------------
+        
+        # Hidden layer
 
-        delta_h1 = delta_output * self.w5
-        delta_h2 = delta_output * self.w6
+        delta_h1 = (
+            delta_output * self.w5
+        )
+
+        delta_h2 = (
+            delta_output * self.w6
+        )
+
+        sigmoid_h1_deriv = (
+            self.sigmoid_derive(h1)
+        )
+
+        sigmoid_h2_deriv = (
+            self.sigmoid_derive(h2)
+        )
 
         delta_z1 = (
             delta_h1
-            * self.sigmoid_derivative(h1)
+            * sigmoid_h1_deriv
         )
 
         delta_z2 = (
             delta_h2
-            * self.sigmoid_derivative(h2)
+            * sigmoid_h2_deriv
         )
 
-        # ------------------------------------------
+        
         # Input -> Hidden gradients
-        # ------------------------------------------
 
         dw1 = delta_z1 * x1
         dw2 = delta_z1 * x2
@@ -216,9 +183,7 @@ class XORNeuralNetwork:
         db1 = delta_z1
         db2 = delta_z2
 
-        # ==========================================
-        # 4. GRADIENT DESCENT
-        # ==========================================
+        # Gradient descent
 
         self.w1 -= self.learning_rate * dw1
         self.w2 -= self.learning_rate * dw2
@@ -229,16 +194,13 @@ class XORNeuralNetwork:
         self.w5 -= self.learning_rate * dw5
         self.w6 -= self.learning_rate * dw6
 
-        self.b1 -= self.learning_rate * db1
-        self.b2 -= self.learning_rate * db2
-        self.b3 -= self.learning_rate * db3
+        self.bias1 -= self.learning_rate * db1
+        self.bias2 -= self.learning_rate * db2
+        self.bias3 -= self.learning_rate * db3
 
         return loss
 
-    def get_parameters(self):
-        """
-        Return all learned weights and biases.
-        """
+    def parameters(self):
 
         return {
             "weights": {
@@ -250,8 +212,8 @@ class XORNeuralNetwork:
                 "w6": self.w6,
             },
             "biases": {
-                "b1": self.b1,
-                "b2": self.b2,
-                "b3": self.b3,
+                "b1": self.bias1,
+                "b2": self.bias2,
+                "b3": self.bias3,
             },
         }
