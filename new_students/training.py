@@ -1,11 +1,14 @@
-from grade_drop.neural_net import StudentsNet
-from grade_drop.trainer import Trainer
+from pathlib import Path
+
+from new_students.neural_net import StudentsNet
+from new_students.trainer import Trainer
 
 
 def main():
+    project_root = Path(__file__).resolve().parent.parent
 
-    dataset_file = "student_dataset.csv"
-    model_file = "students1_model.json"
+    dataset_file = project_root / "student_dataset.csv"
+    model_file = project_root / "students3_model.json"
 
     print("Starting neural network training...")
     print()
