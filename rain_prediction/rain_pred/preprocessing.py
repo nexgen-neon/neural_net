@@ -94,3 +94,33 @@ def prepare_data(df: pd.DataFrame):
         imputer,
         scaler,
     )
+def preprocess_input(inputs, preprocessing):
+
+    imputer_statistics = preprocessing[
+        "imputer_statistics"
+    ]
+
+    scaler_mean = preprocessing[
+        "scaler_mean"
+    ]
+
+    scaler_scale = preprocessing[
+        "scaler_scale"
+    ]
+
+    processed_inputs = []
+
+    for i in range(len(inputs)):
+
+        value = inputs[i]
+
+        if value is None:
+            value = imputer_statistics[i]
+
+        value = (
+            value - scaler_mean[i]
+        ) / scaler_scale[i]
+
+        processed_inputs.append(value)
+
+    return processed_inputs
