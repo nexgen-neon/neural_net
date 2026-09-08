@@ -1,5 +1,5 @@
 import os
-
+from neural_network.backend import Backend, get_backend
 import streamlit as st
 import numpy as np
 from sklearn.impute import SimpleImputer
@@ -326,3 +326,23 @@ def show_weather_page():
                 1.0,
             )
         )
+
+    implementation = st.sidebar.selectbox(
+        "Implementation",
+        [
+            Backend.FROM_SCRATCH.value,
+            Backend.PYTORCH.value,
+        ],
+    )
+    if implementation == "From Scratch":
+    
+            st.sidebar.success(
+                "Using the from-scratch neural network."
+            )
+    
+    else:
+    
+            st.sidebar.info(
+                "PyTorch implementation will be added "
+                "in a future version."
+            )

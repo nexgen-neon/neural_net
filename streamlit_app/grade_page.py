@@ -1,6 +1,13 @@
-import os
+from neural_network.backend import Backend, get_backend
+import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import os
 import streamlit as st
 
 from new_students.neural_net import StudentsNet
@@ -314,3 +321,23 @@ def show_grade_page():
             f"Probability Sum: "
             f"{probability_sum:.4f}"
         )
+
+    implementation = st.sidebar.selectbox(
+    "Implementation",
+    [
+        Backend.FROM_SCRATCH.value,
+        Backend.PYTORCH.value,
+    ],
+)
+    if implementation == "From Scratch":
+    
+            st.sidebar.success(
+                "Using the from-scratch neural network."
+            )
+    
+    else:
+    
+            st.sidebar.info(
+                "PyTorch implementation will be added "
+                "in a future version."
+            )
