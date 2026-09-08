@@ -54,7 +54,7 @@ def create_result_json(
         "truth_table": truth_table,
         "results": results,
         "overall_mse": overall_loss,
-        "parameters": network.get_parameters(),
+        "parameters": network.parameters(),
     }
 
     return json.dumps(

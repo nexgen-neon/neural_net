@@ -1,6 +1,5 @@
-from rain_pred.neural_net import NeuralNetwork
-from rain_pred.trainer import Trainer
-
+from rain_prediction.rain_pred.neural_net import NeuralNetwork
+from rain_prediction.rain_pred.trainer import Trainer
 
 def train_model(
     X_train,
