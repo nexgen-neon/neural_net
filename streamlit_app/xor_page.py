@@ -1,5 +1,9 @@
 import streamlit as st
 
+from src.xor_neural_network.pytorch_trainer import (
+    PyTorchXORTrainer,
+)
+
 from xor_neural_network.loss import (
     calculate_sample_losses,
     mean_squared_error,
@@ -29,13 +33,13 @@ def show_xor_page():
     st.header("🧠 XOR Gate Using Neural Network")
 
     st.write(
-        "A neural network implemented completely "
-        "from scratch using Python."
+        "A neural network implementation for learning "
+        "the XOR logic gate."
     )
 
     st.info(
-        "The current implementation is built from scratch. "
-        "PyTorch support is reserved for a future version."
+        "You can choose between the from-scratch "
+        "implementation and the PyTorch implementation."
     )
 
     # ========================================================
@@ -80,9 +84,8 @@ def show_xor_page():
 
     else:
 
-        st.sidebar.info(
-            "PyTorch implementation will be added "
-            "in a future version."
+        st.sidebar.success(
+            "Using the PyTorch neural network."
         )
 
     # ========================================================
@@ -200,30 +203,22 @@ def show_xor_page():
             st.stop()
 
         # ----------------------------------------------------
-        # PyTorch placeholder
+        # Select Implementation
         # ----------------------------------------------------
 
-        if implementation == "PyTorch":
+        if implementation == "From Scratch":
 
-            st.warning(
-                "⚠️ PyTorch support is not implemented yet."
+            trainer = XORTrainer(
+                learning_rate=learning_rate,
+                epochs=epochs,
             )
 
-            st.info(
-                "The Streamlit interface is already prepared "
-                "for a future PyTorch implementation."
+        else:
+
+            trainer = PyTorchXORTrainer(
+                learning_rate=learning_rate,
+                epochs=epochs,
             )
-
-            st.stop()
-
-        # ----------------------------------------------------
-        # From-Scratch Implementation
-        # ----------------------------------------------------
-
-        trainer = XORTrainer(
-            learning_rate=learning_rate,
-            epochs=epochs,
-        )
 
         # ----------------------------------------------------
         # Train
@@ -441,7 +436,13 @@ def show_xor_page():
         "7. Learned Weights and Biases"
     )
 
-    parameters = network.parameters()
+    if hasattr(network, "parameters_dict"):
+
+        parameters = network.parameters_dict()
+
+    else:
+
+        parameters = network.parameters()
 
     st.json(
         parameters

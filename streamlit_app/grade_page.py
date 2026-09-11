@@ -1,24 +1,56 @@
-from neural_network.backend import Backend, get_backend
+import os
 import sys
+import csv
 from pathlib import Path
+
+import streamlit as st
+
+
+# ---------------------------------------------------------
+# Project path
+# ---------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import os
-import streamlit as st
 
-from new_students.neural_net import StudentsNet
-from new_students.trainer import Trainer
+# ---------------------------------------------------------
+# Backend
+# ---------------------------------------------------------
+
+from neural_network.backend import (
+    Backend,
+    get_backend,
+)
+
+
+# ---------------------------------------------------------
+# From Scratch
+# ---------------------------------------------------------
+
+from new_students.neural_net import (
+    StudentsNet,
+)
+
+from new_students.trainer import (
+    Trainer,
+)
+
+
+# ---------------------------------------------------------
+# PyTorch
+# ---------------------------------------------------------
+
+from new_students.pytorch_trainer import (
+    PyTorchStudentsTrainer,
+)
 
 
 # ---------------------------------------------------------
 # File paths
 # ---------------------------------------------------------
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATASET_FILE = (
     PROJECT_ROOT
@@ -33,12 +65,15 @@ MODEL_FILE = (
 )
 
 
-# ---------------------------------------------------------
-# Train model
-# ---------------------------------------------------------
+# =========================================================
+# FROM SCRATCH - TRAIN
+# =========================================================
 
-def train_grade_model(learning_rate, epochs):
-    """Train the grade prediction neural network."""
+def train_grade_model(
+    learning_rate,
+    epochs,
+):
+    """Train the from-scratch grade model."""
 
     network = StudentsNet(
         learning_rate=learning_rate,
@@ -58,12 +93,11 @@ def train_grade_model(learning_rate, epochs):
     return network
 
 
-# ---------------------------------------------------------
-# Load model
-# ---------------------------------------------------------
+# =========================================================
+# FROM SCRATCH - LOAD
+# =========================================================
 
 def load_grade_model():
-    """Load the saved grade prediction model."""
 
     network = StudentsNet()
 
@@ -72,9 +106,88 @@ def load_grade_model():
     return network
 
 
-# ---------------------------------------------------------
-# Grade Prediction Page
-# ---------------------------------------------------------
+# =========================================================
+# PYTORCH - READ DATA
+# =========================================================
+
+def read_grade_dataset():
+
+    rows = []
+
+    with open(
+        DATASET_FILE,
+        "r",
+        newline="",
+    ) as file:
+
+        reader = csv.DictReader(file)
+
+        for row in reader:
+
+            grade = row["grade"]
+
+            rows.append(
+                {
+                    "hours_studied": float(
+                        row["hours_studied"]
+                    ),
+
+                    "hours_slept": float(
+                        row["hours_slept"]
+                    ),
+
+                    # One-hot encoding
+                    "A": (
+                        1.0
+                        if grade == "A"
+                        else 0.0
+                    ),
+
+                    "B": (
+                        1.0
+                        if grade == "B"
+                        else 0.0
+                    ),
+
+                    "C": (
+                        1.0
+                        if grade == "C"
+                        else 0.0
+                    ),
+                }
+            )
+
+    return rows
+
+
+# =========================================================
+# PYTORCH - TRAIN
+# =========================================================
+
+def train_pytorch_grade_model(
+    learning_rate,
+    epochs,
+    batch_size,
+):
+
+    trainer = PyTorchStudentsTrainer(
+        learning_rate=learning_rate,
+        epochs=epochs,
+        batch_size=batch_size,
+    )
+
+    rows = read_grade_dataset()
+
+    network, loss_history = trainer.train(
+        rows
+    )
+
+    return network, loss_history
+
+
+# =========================================================
+# GRADE PAGE
+# =========================================================
 
 def show_grade_page():
 
@@ -89,10 +202,40 @@ def show_grade_page():
     st.divider()
 
     # =====================================================
+    # IMPLEMENTATION
+    # =====================================================
+
+    implementation = st.sidebar.selectbox(
+        "Implementation",
+        [
+            Backend.FROM_SCRATCH.value,
+            Backend.PYTORCH.value,
+        ],
+    )
+
+    backend = get_backend(
+        implementation
+    )
+
+    if backend == "scratch":
+
+        st.sidebar.success(
+            "Using the from-scratch neural network."
+        )
+
+    else:
+
+        st.sidebar.info(
+            "Using the PyTorch neural network."
+        )
+
+    # =====================================================
     # TRAINING SETTINGS
     # =====================================================
 
-    st.sidebar.subheader("Grade Model Settings")
+    st.sidebar.subheader(
+        "Grade Model Settings"
+    )
 
     epochs = st.sidebar.number_input(
         "Epochs",
@@ -111,43 +254,104 @@ def show_grade_page():
         format="%.4f",
     )
 
-    # =====================================================
-    # MODEL STATUS
-    # =====================================================
+    # -----------------------------------------------------
+    # Batch size only for PyTorch
+    # -----------------------------------------------------
 
-    if os.path.exists(MODEL_FILE):
+    if backend == "pytorch":
 
-        st.success(
-            "Trained grade prediction model found."
+        batch_size = st.sidebar.number_input(
+            "Batch Size",
+            min_value=32,
+            max_value=10000,
+            value=1000,
+            step=32,
         )
 
     else:
 
-        st.warning(
-            "No trained grade prediction model found."
+        batch_size = 1000
+
+    # =====================================================
+    # MODEL STATUS
+    # =====================================================
+
+    if backend == "scratch":
+
+        if os.path.exists(MODEL_FILE):
+
+            st.success(
+                "Trained grade prediction model found."
+            )
+
+        else:
+
+            st.warning(
+                "No trained grade prediction model found."
+            )
+
+    else:
+
+        st.info(
+            "PyTorch model will be trained "
+            "during this session."
         )
 
     # =====================================================
     # TRAINING
     # =====================================================
 
-    st.subheader("Model Training")
+    st.subheader(
+        "Model Training"
+    )
 
-    if st.button("Train Grade Prediction Model"):
+    if st.button(
+        "Train Grade Prediction Model"
+    ):
 
         with st.spinner(
             "Training grade prediction model..."
         ):
 
-            network = train_grade_model(
-                learning_rate=learning_rate,
-                epochs=epochs,
-            )
+            # ---------------------------------------------
+            # From Scratch
+            # ---------------------------------------------
 
-        # Store trained model in session state
+            if backend == "scratch":
+
+                network = train_grade_model(
+                    learning_rate=learning_rate,
+                    epochs=epochs,
+                )
+
+                loss_history = None
+
+            # ---------------------------------------------
+            # PyTorch
+            # ---------------------------------------------
+
+            else:
+
+                (
+                    network,
+                    loss_history,
+                ) = train_pytorch_grade_model(
+                    learning_rate=learning_rate,
+                    epochs=epochs,
+                    batch_size=batch_size,
+                )
+
+        # -------------------------------------------------
+        # Store model
+        # -------------------------------------------------
+
         st.session_state[
             "grade_network"
         ] = network
+
+        st.session_state[
+            "grade_backend"
+        ] = backend
 
         st.session_state[
             "grade_epochs"
@@ -157,27 +361,43 @@ def show_grade_page():
             "grade_learning_rate"
         ] = learning_rate
 
+        # -------------------------------------------------
+        # Store loss history
+        # -------------------------------------------------
+
+        if loss_history is not None:
+
+            st.session_state[
+                "grade_loss_history"
+            ] = loss_history
+
         st.success(
             "Grade prediction model trained successfully!"
         )
 
     # =====================================================
-    # LOAD MODEL
+    # GET MODEL
     # =====================================================
 
-    if "grade_network" in st.session_state:
+    network = None
+
+    if (
+        "grade_network" in st.session_state
+        and st.session_state.get(
+            "grade_backend"
+        ) == backend
+    ):
 
         network = st.session_state[
             "grade_network"
         ]
 
-    elif os.path.exists(MODEL_FILE):
+    elif (
+        backend == "scratch"
+        and os.path.exists(MODEL_FILE)
+    ):
 
         network = load_grade_model()
-
-    else:
-
-        network = None
 
     # =====================================================
     # STUDENT INPUT
@@ -185,7 +405,9 @@ def show_grade_page():
 
     st.divider()
 
-    st.subheader("Student Information")
+    st.subheader(
+        "Student Information"
+    )
 
     col1, col2 = st.columns(2)
 
@@ -211,7 +433,9 @@ def show_grade_page():
     # PREDICTION
     # =====================================================
 
-    if st.button("Predict Grade"):
+    if st.button(
+        "Predict Grade"
+    ):
 
         if network is None:
 
@@ -231,12 +455,20 @@ def show_grade_page():
         # Extract probabilities
         # -------------------------------------------------
 
-        probability_a = probabilities["A"]
-        probability_b = probabilities["B"]
-        probability_c = probabilities["C"]
+        probability_a = probabilities[
+            "A"
+        ]
+
+        probability_b = probabilities[
+            "B"
+        ]
+
+        probability_c = probabilities[
+            "C"
+        ]
 
         # -------------------------------------------------
-        # Find grade with highest probability
+        # Highest probability
         # -------------------------------------------------
 
         predicted_grade = max(
@@ -250,7 +482,9 @@ def show_grade_page():
 
         st.divider()
 
-        st.subheader("Grade Prediction")
+        st.subheader(
+            "Grade Prediction"
+        )
 
         st.metric(
             "Predicted Grade",
@@ -293,7 +527,12 @@ def show_grade_page():
         # =================================================
 
         chart_data = {
-            "Grade": ["A", "B", "C"],
+            "Grade": [
+                "A",
+                "B",
+                "C",
+            ],
+
             "Probability": [
                 probability_a,
                 probability_b,
@@ -322,22 +561,22 @@ def show_grade_page():
             f"{probability_sum:.4f}"
         )
 
-    implementation = st.sidebar.selectbox(
-    "Implementation",
-    [
-        Backend.FROM_SCRATCH.value,
-        Backend.PYTORCH.value,
-    ],
-)
-    if implementation == "From Scratch":
-    
-            st.sidebar.success(
-                "Using the from-scratch neural network."
+        # =================================================
+        # PYTORCH LOSS
+        # =================================================
+
+        if (
+            backend == "pytorch"
+            and "grade_loss_history"
+            in st.session_state
+        ):
+
+            st.subheader(
+                "Training Loss"
             )
-    
-    else:
-    
-            st.sidebar.info(
-                "PyTorch implementation will be added "
-                "in a future version."
+
+            st.line_chart(
+                st.session_state[
+                    "grade_loss_history"
+                ]
             )

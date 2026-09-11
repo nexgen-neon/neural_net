@@ -1,5 +1,7 @@
 import json
 
+import torch
+
 
 def save_model(network, file_path):
 
@@ -51,11 +53,33 @@ def load_model(network, file_path):
     return network
 
 
+def save_pytorch_model(network, file_path):
+    """Save PyTorch parameters separately from the JSON scratch model."""
+    torch.save(
+        {
+            "learning_rate": network.learning_rate,
+            "state_dict": network.state_dict(),
+        },
+        file_path,
+    )
+
+
+def load_pytorch_model(network, file_path):
+    model_data = torch.load(
+        file_path,
+        map_location="cpu",
+        weights_only=True,
+    )
+    network.load_state_dict(model_data["state_dict"])
+    return network
+
+
 def save_preprocessing(
     features,
     imputer,
     scaler,
-    file_path
+    file_path,
+    feature_ranges=None,
 ):
 
     preprocessing_data = {
@@ -64,6 +88,9 @@ def save_preprocessing(
         "scaler_mean": scaler.mean_.tolist(),
         "scaler_scale": scaler.scale_.tolist()
     }
+
+    if feature_ranges is not None:
+        preprocessing_data["feature_ranges"] = feature_ranges
 
     with open(file_path, "w") as file:
         json.dump(
