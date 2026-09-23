@@ -1,8 +1,9 @@
 from .loss import mean_squared_error
-from .neural_network import XORNeuralNetwork
+from .pytorch_neural_net import (
+    PyTorchXORNeuralNetwork,
+)
 
-
-class XORTrainer:
+class PyTorchXORTrainer:
 
     def __init__(
         self,
@@ -14,7 +15,7 @@ class XORTrainer:
 
     def train(self, rows):
 
-        network = XORNeuralNetwork(
+        network = PyTorchXORNeuralNetwork(
             learning_rate=self.learning_rate,
             seed=42,
         )
@@ -32,8 +33,7 @@ class XORTrainer:
                 x2 = row["x2"]
                 expected = row["expected"]
 
-      
-                network.train(
+                network.train_step(
                     x1,
                     x2,
                     expected,
@@ -52,6 +52,7 @@ class XORTrainer:
                     expected
                 )
 
+            # Calculate the loss for this epoch
             epoch_loss = mean_squared_error(
                 predictions,
                 expected_values,
